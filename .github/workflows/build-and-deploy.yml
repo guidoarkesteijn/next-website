@@ -60,7 +60,8 @@ jobs:
           # server side image optimization (https://nextjs.org/docs/api-reference/next/image#unoptimized).
           #
           # You may remove this line if you want to manage the configuration yourself.
-          static_site_generator: next
+          
+          static_site_generator: next,
       - name: Restore cache
         uses: actions/cache@v3
         with:
@@ -93,3 +94,32 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+  # Deploy to repo
+  deploy-repo:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: github-pages
+      - name: Extract tgz
+        uses: ihiroky/extract-action@v1
+        with:
+          file_path: artifact.tar
+          extract_dir: ./_out
+      - name: Deploy to external repository
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.EXTERNAL_REPOSITORY_PERSONAL_ACCESS_TOKEN }}
+        with:
+          # GitHub Action output files
+          source_file: ./_out
+          destination_repo: guidoarkesteijn/next-deploy
+          destination_folder: deploy
+          user_email: 'build@guidoarkesteijn.com'
+          user_name: 'build-server'
+
