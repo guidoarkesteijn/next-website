@@ -7,10 +7,8 @@ name: Deploy Next.js site to Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+    branches: 
+      - main
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
@@ -84,7 +82,7 @@ jobs:
           path: ./out
 
   # Deployment job
-  deploy:
+  pages:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -94,32 +92,39 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
-  # Deploy to repo
-  deploy-repo:
+  # Deploy to other repository
+  deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Check out my deploy repo
+        uses: actions/checkout@v3
+        with:
+          repository: guidoarkesteijn/next-deploy
+          token: ${{ secrets.EXTERNAL_REPOSITORY_PERSONAL_ACCESS_TOKEN }}
       - name: Download a Build Artifact
         uses: actions/download-artifact@v3.0.2
         with:
           name: github-pages
+      - name: Clear directory
+        run: |
+          rm -rf deploy
       - name: Extract tgz
         uses: ihiroky/extract-action@v1
         with:
           file_path: artifact.tar
-          extract_dir: ./_out
-      - name: Deploy to external repository
-        uses: dmnemec/copy_file_to_another_repo_action@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.EXTERNAL_REPOSITORY_PERSONAL_ACCESS_TOKEN }}
-        with:
-          # GitHub Action output files
-          source_file: ./_out
-          destination_repo: guidoarkesteijn/next-deploy
-          destination_folder: deploy
-          user_email: 'build@guidoarkesteijn.com'
-          user_name: 'build-server'
-
+          extract_dir: deploy/_out
+      - name: GIT commit and push docs
+        env: 
+          CI_COMMIT_MESSAGE: Continuous Integration Build Artifacts
+          CI_COMMIT_AUTHOR: Continuous Integration
+          CI_COMMIT_EMAIL: guidoarkesteijn@users.noreply.github.com
+        run: |
+          git config --global user.name "${{ env.CI_COMMIT_AUTHOR }}"
+          git config --global user.email "${{ env.CI_COMMIT_AUTHOR }}"
+          git add deploy
+          git commit -m "${{ env.CI_COMMIT_MESSAGE }}"
+          git push
