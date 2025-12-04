@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6.0.1
       - name: Detect package manager
         id: detect-package-manager
         run: |
@@ -46,7 +46,7 @@ jobs:
             exit 1
           fi
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6.1.0
         with:
           node-version: "16"
           cache: ${{ steps.detect-package-manager.outputs.manager }}
@@ -60,7 +60,7 @@ jobs:
           
           static_site_generator: next,
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4.3.0
         with:
           path: |
             .next/cache
@@ -100,12 +100,12 @@ jobs:
     needs: build
     steps:
       - name: Check out my deploy repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6.0.1
         with:
           repository: guidoarkesteijn/next-deploy
           token: ${{ secrets.EXTERNAL_REPOSITORY_PERSONAL_ACCESS_TOKEN }}
       - name: Download a Build Artifact
-        uses: actions/download-artifact@v3.0.2
+        uses: actions/download-artifact@v6.0.0
         with:
           name: github-pages
       - name: Clear directory
